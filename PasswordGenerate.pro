@@ -9,6 +9,7 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    src/encryptionengine.cpp \
     src/filerw.cpp \
     src/generate.cpp \
     src/generatepassword.cpp \
@@ -18,6 +19,7 @@ SOURCES += \
     src/passwordlist.cpp
 
 HEADERS += \
+    src/encryptionengine.h \
     src/filerw.h \
     src/generate.h \
     src/generatepassword.h \
@@ -29,6 +31,9 @@ FORMS += \
     src/generate.ui \
     src/mainwindow.ui \
     src/passwordlist.ui
+
+INCLUDEPATH += /usr/local/include
+LIBS += -lssl -lcrypto
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
