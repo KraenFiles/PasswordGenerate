@@ -32,7 +32,7 @@ FORMS += \
     src/mainwindow.ui \
     src/passwordlist.ui
 
-INCLUDEPATH += /usr/local/include
+INCLUDEPATH += /usr/include
 LIBS += -lssl -lcrypto
 
 # Default rules for deployment.
