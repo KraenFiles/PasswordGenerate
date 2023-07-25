@@ -1,15 +1,11 @@
 #include "encryptionengine.h"
 
 #include <QFile>
-#include <QTextStream>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
-EncryptionEngine::EncryptionEngine( QString cipher, QString pas )
-{
-    SetCipherName( cipher );
-    SetPassword( pas );
-}
+#include <QDataStream>
+#include <QTextStream>
 
 EncryptionEngine::EncryptionEngine( QString cipher,
                                     QString pas,
@@ -17,27 +13,6 @@ EncryptionEngine::EncryptionEngine( QString cipher,
                                     QString encFile,
                                     QString publicKey,
                                     QString privateKey )
-{
-    SetCipherName( cipher );
-    SetPassword( pas );
-    SetFilesPath( path );
-    SetEncryptionFileName( encFile );
-    SetPublicKeyName( publicKey );
-    SetPrivateKeyName( privateKey );
-}
-
-EncryptionEngine::EncryptionEngine( char * cipher, char * pas )
-  : cipherName( cipher )
-  , password( pas )
-{
-}
-
-EncryptionEngine::EncryptionEngine( char * cipher,
-                                    char * pas,
-                                    char * path,
-                                    char * encFile,
-                                    char * publicKey,
-                                    char * privateKey )
   : cipherName( cipher )
   , password( pas )
   , filesPath( path )
@@ -45,6 +20,7 @@ EncryptionEngine::EncryptionEngine( char * cipher,
   , publicKeyName( publicKey )
   , privateKeyName( privateKey )
 {
+    password.remove( password.length() );
 }
 
 void EncryptionEngine::RSAKeyGeneration()
@@ -57,24 +33,20 @@ void EncryptionEngine::RSAKeyGeneration()
     //Контекст алгоритма шифрования
     const EVP_CIPHER * cipher = NULL;
 
-    char * publicFileName = new char[strlen( filesPath ) + strlen( publicKeyName )];
-    strcat( publicFileName, filesPath );
-    strcat( publicFileName, publicKeyName );
-    publicKeyFile = fopen( publicFileName, "wb" );
-    delete[] publicFileName;
-
-    char * privateFileName = new char[strlen( filesPath ) + strlen( privateKeyName )];
-    strcat( privateFileName, filesPath );
-    strcat( privateFileName, privateKeyName );
-    privateKeyFile = fopen( privateFileName, "wb" );
-    delete[] privateFileName;
+    publicKeyFile = fopen( ( filesPath + publicKeyName ).toUtf8().data(), "wb" );
+    privateKeyFile = fopen( ( filesPath + privateKeyName ).toUtf8().data(), "wb" );
 
     rsa = RSA_generate_key( keySize, RSA_F4, NULL, NULL );
     //Контекст алгоритма шифрования
-    cipher = EVP_get_cipherbyname( cipherName );
+    cipher = EVP_get_cipherbyname( "RC4-SHA" );
 
+    char pas[password.length()];
+    char * ar = password.toUtf8().data();
+    for ( int i = 0; i < password.length(); i++ ) {
+        pas[i] = ar[i];
+    }
     //Ключей в файлы и шифрация секретного паролем
-    PEM_write_RSAPrivateKey( privateKeyFile, rsa, cipher, NULL, 0, NULL, password );
+    PEM_write_RSAPrivateKey( privateKeyFile, rsa, cipher, NULL, 0, NULL, pas );
     PEM_write_RSAPublicKey( publicKeyFile, rsa );
 
     RSA_free( rsa );
@@ -89,11 +61,7 @@ void EncryptionEngine::RSAEncryptionText( QString text )
     char *ctext, *ptext;
     int inlen, outlen;
 
-    char * publicFileName = new char[strlen( filesPath ) + strlen( publicKeyName )];
-    strcat( publicFileName, filesPath );
-    strcat( publicFileName, publicKeyName );
-    publicKeyFile = fopen( publicFileName, "rb" );
-    delete[] publicFileName;
+    publicKeyFile = fopen( ( filesPath + publicKeyName ).toUtf8().data(), "rb" );
 
     publicKey = PEM_read_RSAPublicKey( publicKeyFile, NULL, NULL, NULL );
     fclose( publicKeyFile );
@@ -104,25 +72,28 @@ void EncryptionEngine::RSAEncryptionText( QString text )
 
     OpenSSL_add_all_algorithms();
 
-    char * encFileName = new char[strlen( filesPath ) + strlen( encryptionFileName )];
-    strcat( encFileName, filesPath );
-    strcat( encFileName, encryptionFileName );
-    QFile outputText( encFileName );
+    QFile outputText( filesPath + encryptionFileName );
     outputText.open( QFile::WriteOnly );
 
     int textPos = 0;
-    /* Шифруем содержимое входного файла */
+    bool end = false;
+    // Шифруем содержимое входного файла
     while ( 1 ) {
-        if ( textPos + keySize - 11 < text.length() - 1 )
-            ptext = const_cast<char *>( text.mid( textPos, keySize - 11 ).toStdString().c_str() );
-        else
-            ptext = const_cast<char *>( text.mid( textPos ).toStdString().c_str() );
-        inlen = sizeof( ptext );
+        if ( textPos + keySize - 11 < text.length() - 1 ) {
+            ptext = text.mid( textPos, keySize - 11 ).toUtf8().data();
+            textPos += keySize - 11;
+            inlen = keySize - 11;
+        } else {
+            inlen = text.mid( textPos ).length();
+            ptext = text.mid( textPos ).toUtf8().data();
+            end = true;
+        }
         if ( inlen <= 0 ) break;
         outlen =
           RSA_public_encrypt( inlen, (unsigned char *)ptext, (unsigned char *)ctext, publicKey, RSA_PKCS1_PADDING );
         if ( outlen != RSA_size( publicKey ) ) exit( -1 );
         outputText.write( ctext, outlen );
+        if ( end ) break;
     }
     outputText.close();
 }
@@ -135,13 +106,16 @@ QString EncryptionEngine::RSADecryptionToText()
     int inlen, outlen;
 
     OpenSSL_add_all_algorithms();
-    char * privateFileName = new char[strlen( filesPath ) + strlen( privateKeyName )];
-    strcat( privateFileName, filesPath );
-    strcat( privateFileName, privateKeyName );
-    privateKeyFile = fopen( privateFileName, "wb" );
-    delete[] privateFileName;
 
-    privateKey = PEM_read_RSAPrivateKey( privateKeyFile, NULL, NULL, password );
+    privateKeyFile = fopen( ( filesPath + privateKeyName ).toUtf8().data(), "rb" );
+
+    char pas[password.length()];
+    char * ar = password.toUtf8().data();
+    for ( int i = 0; i < password.length(); i++ ) {
+        pas[i] = ar[i];
+    }
+
+    privateKey = PEM_read_RSAPrivateKey( privateKeyFile, NULL, NULL, pas );
     fclose( privateKeyFile );
 
     int keySize = RSA_size( privateKey );
@@ -150,22 +124,23 @@ QString EncryptionEngine::RSADecryptionToText()
 
     QString decryptionText;
 
-    char * encFileName = new char[strlen( filesPath ) + strlen( encryptionFileName )];
-    strcat( encFileName, filesPath );
-    strcat( encFileName, encryptionFileName );
-    QFile inputText( encFileName );
+    QFile inputText( filesPath + encryptionFileName );
     inputText.open( QFile::ReadOnly );
 
+    QDataStream stream( &inputText );
+
     while ( 1 ) {
-        inlen = inputText.read( ctext, keySize );
+        inlen = stream.readRawData( ctext, keySize );
         if ( inlen <= 0 ) break;
         outlen =
           RSA_private_decrypt( inlen, (unsigned char *)ctext, (unsigned char *)ptext, privateKey, RSA_PKCS1_PADDING );
         if ( outlen < 0 ) exit( 0 );
-        decryptionText.append( ptext );
+        decryptionText.append( QString( ptext ).remove( outlen + 1, keySize - outlen - 1 ) );
     }
 
     inputText.close();
+
+    decryptionText.remove( decryptionText.length() - 1, 1 );
 
     return decryptionText;
 }
@@ -189,4 +164,23 @@ void EncryptionEngine::RSADecryptionInFile( QString outFile )
     QTextStream out( &outputFile );
     out << text;
     outputFile.close();
+}
+
+bool EncryptionEngine::CheckKeys() const
+{
+    QFile publicFile( filesPath + publicKeyName );
+    publicFile.open( QFile::ReadOnly );
+    QString all = publicFile.readAll();
+    publicFile.close();
+
+    if ( all.isEmpty() ) return false;
+
+    QFile privateFile( filesPath + privateKeyName );
+    privateFile.open( QFile::ReadOnly );
+    all = privateFile.readAll();
+    privateFile.close();
+
+    if ( all.isEmpty() ) return false;
+
+    return true;
 }

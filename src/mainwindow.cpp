@@ -1,24 +1,29 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
-#include "passwordlist.h"
-
 #include "generate.h"
+#include "passwordlist.h"
+#include "ui_mainwindow.h"
+#include <QFile>
 
-MainWindow::MainWindow(QWidget *parent)
-	: QMainWindow(parent)
-	, ui(new Ui::MainWindow)
+MainWindow::MainWindow( QWidget * parent )
+  : QMainWindow( parent )
+  , ui( new Ui::MainWindow )
 {
-	ui->setupUi(this);
+    ui->setupUi( this );
 }
 
 MainWindow::~MainWindow()
 {
-	delete ui;
+    delete ui;
 }
 
 void MainWindow::on_generateButton_clicked()
 {
-    Generate* window = new Generate();
+    QFile pas( "./data/password" );
+    pas.open( QFile::ReadOnly );
+    QString password = pas.readAll();
+    pas.close();
+
+    Generate * window = new Generate( password );
     window->show();
     this->hide();
 }
@@ -26,7 +31,12 @@ void MainWindow::on_generateButton_clicked()
 
 void MainWindow::on_showAllButton_clicked()
 {
-    PasswordList* window = new PasswordList();
+    QFile pas( "./data/password" );
+    pas.open( QFile::ReadOnly );
+    QString password = pas.readAll();
+    pas.close();
+
+    PasswordList * window = new PasswordList( password );
     window->show();
     this->hide();
 }
