@@ -16,17 +16,18 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-
-void MainWindow::on_pushButton_2_clicked()
+void MainWindow::on_generateButton_clicked()
 {
-	Generate* window = new Generate();
-	window->show();
-	this->hide();
+    Generate* window = new Generate();
+    window->show();
+    this->hide();
 }
 
-void MainWindow::on_pushButton_clicked()
+
+void MainWindow::on_showAllButton_clicked()
 {
-	PasswordList* window = new PasswordList();
-	window->show();
-	this->hide();
+    PasswordList* window = new PasswordList();
+    window->show();
+    this->hide();
 }
+

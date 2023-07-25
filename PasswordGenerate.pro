@@ -16,7 +16,8 @@ SOURCES += \
     src/main.cpp \
     src/mainwindow.cpp \
     src/passwordbutton.cpp \
-    src/passwordlist.cpp
+    src/passwordlist.cpp \
+    src/synchroniser.cpp
 
 HEADERS += \
     src/encryptionengine.h \
@@ -25,17 +26,29 @@ HEADERS += \
     src/generatepassword.h \
     src/mainwindow.h \
     src/passwordbutton.h \
-    src/passwordlist.h
+    src/passwordlist.h \
+    src/synchroniser.h
 
 FORMS += \
     src/generate.ui \
     src/mainwindow.ui \
     src/passwordlist.ui
 
+unix:{
 INCLUDEPATH += /usr/local/include
 LIBS += -lssl -lcrypto
+}
+else: win32: {
+INCLUDEPATH += C:/OpenSSL-Win64/include
+LIBS += -LC:/OpenSSL-Win64/lib -lssl -lcrypto
+}
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+contains(ANDROID_TARGET_ARCH,x86_64) {
+    ANDROID_PACKAGE_SOURCE_DIR = \
+        $$PWD/android
+}

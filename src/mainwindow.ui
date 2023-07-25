@@ -33,14 +33,14 @@
        <number>15</number>
       </property>
       <item>
-       <widget class="QPushButton" name="pushButton_2">
+       <widget class="QPushButton" name="generateButton">
         <property name="text">
          <string>Генерация пароля</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="showAllButton">
         <property name="text">
          <string>Список паролей</string>
         </property>
@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>418</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
