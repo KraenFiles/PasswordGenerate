@@ -20,7 +20,7 @@ EncryptionEngine::EncryptionEngine( QString cipher,
   , publicKeyName( publicKey )
   , privateKeyName( privateKey )
 {
-    password.remove( password.length() );
+    //password.remove( password.length() );
 }
 
 void EncryptionEngine::RSAKeyGeneration()
@@ -33,18 +33,20 @@ void EncryptionEngine::RSAKeyGeneration()
     //Контекст алгоритма шифрования
     const EVP_CIPHER * cipher = NULL;
 
-    publicKeyFile = fopen( ( filesPath + publicKeyName ).toUtf8().data(), "wb" );
-    privateKeyFile = fopen( ( filesPath + privateKeyName ).toUtf8().data(), "wb" );
+    char publicFullName[( filesPath + publicKeyName ).length()];
+    char privateFullName[( filesPath + privateKeyName ).length()];
+    strcpy(publicFullName, ( filesPath + publicKeyName ).toUtf8().data());
+    strcpy(privateFullName, ( filesPath + privateKeyName ).toUtf8().data());
+    publicKeyFile = fopen(publicFullName , "wb" );
+    privateKeyFile = fopen( privateFullName, "wb" );
 
     rsa = RSA_generate_key( keySize, RSA_F4, NULL, NULL );
     //Контекст алгоритма шифрования
     cipher = EVP_get_cipherbyname( "RC4-SHA" );
 
     char pas[password.length()];
-    char * ar = password.toUtf8().data();
-    for ( int i = 0; i < password.length(); i++ ) {
-        pas[i] = ar[i];
-    }
+    strcpy(pas, password.toUtf8().data());
+
     //Ключей в файлы и шифрация секретного паролем
     PEM_write_RSAPrivateKey( privateKeyFile, rsa, cipher, NULL, 0, NULL, pas );
     PEM_write_RSAPublicKey( publicKeyFile, rsa );
@@ -61,7 +63,9 @@ void EncryptionEngine::RSAEncryptionText( QString text )
     char *ctext, *ptext;
     int inlen, outlen;
 
-    publicKeyFile = fopen( ( filesPath + publicKeyName ).toUtf8().data(), "rb" );
+    char publicFullName[( filesPath + publicKeyName ).length()];
+    strcpy(publicFullName, ( filesPath + publicKeyName ).toUtf8().data());
+    publicKeyFile = fopen( publicFullName, "rb" );
 
     publicKey = PEM_read_RSAPublicKey( publicKeyFile, NULL, NULL, NULL );
     fclose( publicKeyFile );
@@ -79,19 +83,19 @@ void EncryptionEngine::RSAEncryptionText( QString text )
     bool end = false;
     // Шифруем содержимое входного файла
     while ( 1 ) {
-        if ( textPos + keySize - 11 < text.length() - 1 ) {
-            ptext = text.mid( textPos, keySize - 11 ).toUtf8().data();
+        if ( textPos + keySize - 11 < text.length() ) {
+            strcpy(ptext, text.mid( textPos, keySize- 11 ).toUtf8().data());
             textPos += keySize - 11;
             inlen = keySize - 11;
         } else {
             inlen = text.mid( textPos ).length();
-            ptext = text.mid( textPos ).toUtf8().data();
+            strcpy(ptext, text.mid( textPos, -1 ).toUtf8().data());
             end = true;
         }
         if ( inlen <= 0 ) break;
         outlen =
           RSA_public_encrypt( inlen, (unsigned char *)ptext, (unsigned char *)ctext, publicKey, RSA_PKCS1_PADDING );
-        if ( outlen != RSA_size( publicKey ) ) exit( -1 );
+        //if ( outlen != RSA_size( publicKey ) ) exit( -1 );
         outputText.write( ctext, outlen );
         if ( end ) break;
     }
@@ -107,13 +111,13 @@ QString EncryptionEngine::RSADecryptionToText()
 
     OpenSSL_add_all_algorithms();
 
-    privateKeyFile = fopen( ( filesPath + privateKeyName ).toUtf8().data(), "rb" );
+    char privateFullName[( filesPath + privateKeyName ).length()];
+    strcpy(privateFullName, ( filesPath + privateKeyName ).toUtf8().data());
+
+    privateKeyFile = fopen( privateFullName, "rb" );
 
     char pas[password.length()];
-    char * ar = password.toUtf8().data();
-    for ( int i = 0; i < password.length(); i++ ) {
-        pas[i] = ar[i];
-    }
+    strcpy(pas, password.toUtf8().data());
 
     privateKey = PEM_read_RSAPrivateKey( privateKeyFile, NULL, NULL, pas );
     fclose( privateKeyFile );
@@ -135,12 +139,13 @@ QString EncryptionEngine::RSADecryptionToText()
         outlen =
           RSA_private_decrypt( inlen, (unsigned char *)ctext, (unsigned char *)ptext, privateKey, RSA_PKCS1_PADDING );
         if ( outlen < 0 ) exit( 0 );
-        decryptionText.append( QString( ptext ).remove( outlen + 1, keySize - outlen - 1 ) );
+        QString result = QString::fromUtf8( ptext, outlen );
+        decryptionText.append(result );
     }
 
     inputText.close();
 
-    decryptionText.remove( decryptionText.length() - 1, 1 );
+    //decryptionText.remove( decryptionText.length() - 1, 1 );
 
     return decryptionText;
 }

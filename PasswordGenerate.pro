@@ -1,6 +1,7 @@
 QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+#greaterThan(QT_MAJOR_VERSION,5): QT += core5compat
 
 CONFIG += c++11
 
@@ -17,7 +18,8 @@ SOURCES += \
     src/mainwindow.cpp \
     src/passwordbutton.cpp \
     src/passwordlist.cpp \
-    src/synchroniser.cpp
+    src/synchroniser.cpp \
+    src/applink.c
 
 HEADERS += \
     src/encryptionengine.h \
@@ -39,8 +41,8 @@ INCLUDEPATH += /usr/local/include
 LIBS += -lssl -lcrypto
 }
 else: win32: {
-INCLUDEPATH += C:/OpenSSL-Win64/include
-LIBS += -LC:/OpenSSL-Win64/lib -lssl -lcrypto
+INCLUDEPATH += Q:/Qt/Tools/OpenSSLv3/Win_x64/include
+LIBS += -LQ:/Qt/Tools/OpenSSLv3/Win_x64/lib -lssl -lcrypto
 }
 
 # Default rules for deployment.

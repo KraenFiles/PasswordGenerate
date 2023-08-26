@@ -1,7 +1,6 @@
 #ifndef ENCRYPTIONENGINE_H
 #define ENCRYPTIONENGINE_H
 
-//#include <string>
 #include <QString>
 
 class EncryptionEngine

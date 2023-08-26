@@ -25,15 +25,15 @@ from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly',
           'https://www.googleapis.com/auth/drive.file',
           'https://www.googleapis.com/auth/drive']
-CLIENT_SECRET_FILE = 'client_secret.json'
+CLIENT_SECRET_FILE = './scripts/client_secret.json'
 APPLICATION_NAME = 'Drive Sync'
 
 # Declare full path to folder and folder name
-FULL_PATH = os.getcwd() + '\\../data'
+FULL_PATH = os.getcwd() + '\\./data/passwords'
 DIR_NAME = FULL_PATH.split('/')[-1]
 
 GOOGLE_MIME_TYPES = {
-    'application/vnd.google-apps.file': ''
+    'application/vnd.google-apps.file': '*.enc'
 }
 
 def folder_upload(service):
@@ -93,7 +93,7 @@ def check_upload(service):
     """
 
     results = service.files().list(
-        pageSize=100,
+        pageSize=1,
         q="'root' in parents and trashed != True and \
         mimeType='application/vnd.google-apps.folder'").execute()
 
@@ -123,8 +123,8 @@ def get_credentials():
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if os.path.exists('./scripts/token.json'):
+        creds = Credentials.from_authorized_user_file('./scripts/token.json', SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -134,7 +134,7 @@ def get_credentials():
                 CLIENT_SECRET_FILE, SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('token.json', 'w') as token:
+        with open('./scripts/token.json', 'w') as token:
             token.write(creds.to_json())
     return creds
 
@@ -281,6 +281,7 @@ def main():
         folder_id = parents_id[last_dir]
         results = service.files().list(
             pageSize=20, q=('%r in parents' % folder_id)).execute()
+        pr
 
         items = results.get('files', [])
         os.makedirs(variable)
@@ -301,7 +302,7 @@ def main():
         folder_id = parents_id[last_dir]
 
         results = service.files().list(
-            pageSize=1000,
+            pageSize=10,
             q=('%r in parents and \
             mimeType!="application/vnd.google-apps.folder"' % folder_id),
             fields="files(id, name, mimeType, \

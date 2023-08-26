@@ -7,7 +7,7 @@
 
 FileRW::FileRW( QString pas )
   : allInformation()
-  , engine( new EncryptionEngine( "RC4-SHA", pas ) )
+  , engine( new EncryptionEngine( "RC4-SHA", pas, "./data/", "passwords/pas.enc" ) )
 {
     if ( !engine->CheckKeys() ) {
         engine->RSAKeyGeneration();
@@ -39,6 +39,7 @@ bool FileRW::write()
 {
     QJsonDocument document;
     document.setObject( allInformation );
-    engine->RSAEncryptionText( document.toJson() );
+    QString text = document.toJson();
+    engine->RSAEncryptionText( text );
     return true;
 }

@@ -3,7 +3,6 @@
 #include "passwordlist.h"
 #include "ui_generate.h"
 
-#include <QDebug>
 #include <QFile>
 #include <QJsonArray>
 #include <QMessageBox>

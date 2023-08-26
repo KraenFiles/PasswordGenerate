@@ -1,14 +1,29 @@
 #include "synchroniser.h"
+#include <QDebug>
 
 Synchroniser::Synchroniser()
-    :script()
+    :script(new QProcess)
 {
-    script->start("./scripts/download_from_drive.py");
+#if defined(Q_OS_WINDOWS)
+    script->start("python.exe", {"./scripts/download_from_drive.py"});
+#elif define(Q_OS_UNIX)
+    script->start("python", {"./scripts/download_from_drive.py"});
+#endif
+    script->waitForStarted();
     script->waitForFinished();
+    qDebug()<< script->readAllStandardOutput();
 }
 
 Synchroniser::~Synchroniser()
 {
-    script->start("./scripts/upload_to_drive.py");
+#if defined(Q_OS_WINDOWS)
+    script->start("python.exe", {"./scripts/upload_to_drive.py"});
+#elif define(Q_OS_UNIX)
+    script->start("python", {"./scripts/upload_to_drive.py"});
+#endif
+    script->waitForStarted();
     script->waitForFinished();
+    qDebug()<< script->readAllStandardOutput();
+
+    delete script;
 }

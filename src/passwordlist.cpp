@@ -46,8 +46,8 @@ PasswordList::~PasswordList()
 
 void PasswordList::GenerateList()
 {
+    qDeleteAll( ui->passwordsContentArea->children() );
     if ( !passwords.isEmpty() ) {
-        qDeleteAll( ui->passwordsContentArea->children() );
         QVBoxLayout * mainLayout = new QVBoxLayout();
 
         QJsonArray logins = file.GetValue( "logins" ).toArray();
@@ -91,6 +91,13 @@ void PasswordList::GenerateList()
         QSpacerItem * spacer = new QSpacerItem( 15, 15, QSizePolicy::Expanding, QSizePolicy::Expanding );
         mainLayout->addSpacerItem( spacer );
         ui->passwordsContentArea->setLayout( mainLayout );
+    }
+    else{
+        QHBoxLayout * layout = new QHBoxLayout();
+        QLabel * labelClearList = new QLabel("Список пуст");
+        labelClearList->setAlignment(Qt::AlignCenter);
+        layout->addWidget(labelClearList);
+        ui->passwordsContentArea->setLayout(layout);
     }
 }
 
@@ -157,8 +164,8 @@ void PasswordList::delete_element()
         passwords.removeAt( indexPassword );
         file.Overwrite( "passwords", passwords );
         file.write();
-        GenerateList();
     }
+    GenerateList();
 }
 
 void PasswordList::on_clearButton_clicked()
@@ -193,28 +200,15 @@ void PasswordList::on_loginsComboBox_currentIndexChanged( int index )
                 }
             }
             loginOverwrite = true;
-            if ( passwords.isEmpty() ) {
-                goto Empty;
-            }
-            GenerateList();
-        } else {
-        Empty:
-            QVBoxLayout * mainLayout = new QVBoxLayout();
-            QLabel * label = new QLabel();
-            label->setText( "Нет паролей!" );
-            label->setAlignment( Qt::Alignment( Qt::AlignmentFlag::AlignCenter ) );
-            mainLayout->addWidget( label );
-            qDeleteAll( ui->passwordsContentArea->children() );
-            ui->passwordsContentArea->setLayout( mainLayout );
         }
     } else {
         if ( !tagText.isEmpty() ) {
             on_tagsEdit_textChanged( tagText );
         } else {
             passwords = file.GetValue( "passwords" ).toArray();
-            GenerateList();
         }
     }
+    GenerateList();
 }
 
 void PasswordList::on_tagsEdit_textChanged( const QString & arg1 )
@@ -263,30 +257,17 @@ void PasswordList::on_tagsEdit_textChanged( const QString & arg1 )
                         indexPassword++;
                     }
                 }
-                tagOverwrite = true;
-                if ( passwords.isEmpty() ) {
-                    goto Empty;
-                }
-                GenerateList();
+                tagOverwrite = true; 
             }
-        } else {
-        Empty:
-            QVBoxLayout * mainLayout = new QVBoxLayout();
-            QLabel * label = new QLabel();
-            label->setText( "Нет паролей!" );
-            label->setAlignment( Qt::Alignment( Qt::AlignmentFlag::AlignCenter ) );
-            mainLayout->addWidget( label );
-            qDeleteAll( ui->passwordsContentArea->children() );
-            ui->passwordsContentArea->setLayout( mainLayout );
         }
     } else {
         if ( loginIndex != 0 ) {
             on_loginsComboBox_currentIndexChanged( loginIndex );
         } else {
             passwords = file.GetValue( "passwords" ).toArray();
-            GenerateList();
         }
     }
+    GenerateList();
 }
 
 void PasswordList::on_TagDeleteButton_clicked()
@@ -295,7 +276,6 @@ void PasswordList::on_TagDeleteButton_clicked()
     bool availTagInPasswords = false;
 
     passwords = file.GetValue( "passwords" ).toArray();
-    if ( !passwords.isEmpty() ) {
         foreach ( const QJsonValue & value, passwords ) {
             if ( value["tag"].toInt() == indexTag ) {
                 availTagInPasswords = true;
@@ -332,7 +312,6 @@ void PasswordList::on_TagDeleteButton_clicked()
         } else {
             QMessageBox::critical( this, "Ошибка удаления", "Данное имя используется паролем!" );
         }
-    }
 }
 
 void PasswordList::on_loginDeleteButton_clicked()
@@ -341,8 +320,7 @@ void PasswordList::on_loginDeleteButton_clicked()
     bool availLoginInPasswords = false;
 
     passwords = file.GetValue( "passwords" ).toArray();
-    if ( !passwords.isEmpty() ) {
-        foreach ( const QJsonValue & value, passwords ) {
+    foreach ( const QJsonValue & value, passwords ) {
             if ( value["login"].toInt() == indexLogin ) {
                 availLoginInPasswords = true;
                 break;
@@ -382,5 +360,4 @@ void PasswordList::on_loginDeleteButton_clicked()
         } else {
             QMessageBox::critical( this, "Ошибка удаления", "Данный логин используется паролем!" );
         }
-    }
 }
